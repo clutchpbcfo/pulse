@@ -1,0 +1,23 @@
+<svg viewBox="0 0 1280 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PULSE logo">
+  <defs>
+    <radialGradient id="moL" cx="40%" cy="32%" r="78%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="46%" stop-color="#00e5ff"/><stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="wm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#00e5ff"/>
+    </linearGradient>
+  </defs>
+  <!-- mark -->
+  <circle cx="170" cy="180" r="92" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="16"/>
+  <path d="M 124 100 A 92 92 0 0 1 216 100" fill="none" stroke="#00e5ff" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="170" cy="272" r="58" fill="url(#moL)"/>
+  <circle cx="170" cy="272" r="44" fill="#0a0c14" stroke="#00e5ff" stroke-width="6"/>
+  <g fill="none" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round">
+    <path d="M 152 270 Q 158 263 164 270"/>
+    <path d="M 176 270 Q 182 263 188 270"/>
+    <path d="M 158 283 Q 170 291 182 283"/>
+  </g>
+  <!-- wordmark -->
+  <text x="320" y="252" font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="210" letter-spacing="-6" fill="url(#wm)">PULSE</text>
+  <text x="326" y="312" font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="34" letter-spacing="7" fill="#7f94a8">ONE TAP. STAY LOCKED IN.</text>
+</svg>

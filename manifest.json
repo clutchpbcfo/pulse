@@ -1,0 +1,16 @@
+{
+  "name": "PULSE",
+  "short_name": "PULSE",
+  "description": "One-tap reflex score-chaser. Tap the instant the orb hits the zone.",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#05060a",
+  "theme_color": "#05060a",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "pulse-icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
