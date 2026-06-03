@@ -68,6 +68,23 @@
   #mute{ position:fixed; bottom:3.6vh; left:5vw; z-index:7; width:44px; height:44px; padding:0; border-radius:50%; font-size:19px; background:rgba(255,255,255,.08); color:#fff; box-shadow:none; opacity:.7; }
   #toast{ position:fixed; bottom:5vh; left:50%; transform:translateX(-50%); z-index:9; background:var(--accent); color:#05060a; font-weight:900; letter-spacing:1px; padding:12px 22px; border-radius:999px; box-shadow:0 8px 26px rgba(0,0,0,.4); transition:opacity .25s, transform .25s; }
   #shields{ position:absolute; top:calc(5.5vh + clamp(96px,26vw,205px)); left:0; right:0; text-align:center; font-size:clamp(13px,3.6vw,18px); letter-spacing:3px; }
+  #handle-input{ margin-top:18px; width:min(78vw,300px); padding:14px 16px; border-radius:14px; border:2px solid rgba(255,255,255,.15); background:rgba(255,255,255,.06); color:#fff; font-size:18px; font-weight:800; letter-spacing:1px; text-align:center; outline:none; }
+  #handle-input:focus{ border-color:var(--accent); }
+  #handle-note{ margin-top:8px; font-size:12px; font-weight:700; opacity:.7; min-height:1em; }
+  #profile-stats{ margin-top:14px; }
+  .lbtabs{ display:flex; gap:8px; margin-top:18px; }
+  .lbtab{ background:rgba(255,255,255,.08); color:#fff; box-shadow:none; padding:10px 20px; }
+  .lbtab.on{ background:var(--accent); color:#05060a; }
+  #lblist{ margin-top:16px; width:min(92vw,420px); max-height:50vh; overflow:auto; font-size:14px; font-weight:700; }
+  .lbrow{ display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px; }
+  .lbrow:nth-child(even){ background:rgba(255,255,255,.04); }
+  .lbrow .rk{ opacity:.55; width:34px; text-align:left; }
+  .lbrow .nm{ flex:1; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lbrow .sc{ color:var(--accent); font-weight:900; }
+  .lbrow.me{ background:var(--accent); color:#05060a; }
+  .lbrow.me .sc,.lbrow.me .rk{ color:#05060a; }
+  #lbme{ margin-top:10px; font-size:13px; font-weight:800; opacity:.85; min-height:1em; }
+  #rank{ font-size:14px; font-weight:800; min-height:1em; letter-spacing:.5px; }
   .credit{ position:fixed; bottom:2.2vh; left:0; right:0; text-align:center; font-size:11px; letter-spacing:1px; opacity:.3; z-index:6; }
 </style>
 </head>
@@ -90,7 +107,9 @@
   <div class="menu">
     <button id="daily">DAILY #<span id="dayno">1</span></button>
     <button id="endless" class="ghost">ENDLESS</button>
+    <button id="board-btn" class="ghost">LEADERBOARD</button>
     <button id="locker-btn" class="ghost">LOCKER</button>
+    <button id="profile-btn" class="ghost">PROFILE</button>
   </div>
   <div class="best">BEST&nbsp; <span id="tbest">0</span></div>
 </div>
@@ -116,6 +135,7 @@
     <div id="result"></div>
     <div id="xpstrip"><span id="xplevel">LV 1</span><div class="xpbar"><i id="xpfill"></i></div><span id="xpgain"></span></div>
     <div id="rewards"></div>
+    <div id="rank"></div>
     <canvas id="card" width="1080" height="1350"></canvas>
     <div class="btns">
       <button id="replay">REPLAY</button>
@@ -123,9 +143,27 @@
     </div>
     <div class="btns">
       <button id="save" class="ghost">SAVE CARD</button>
+      <button id="board-btn2" class="ghost">RANKINGS</button>
       <button id="menu" class="ghost">MENU</button>
     </div>
   </div>
+</div>
+
+<div id="profile" class="overlay hidden">
+  <div class="logo" style="font-size:clamp(34px,10vw,64px)">YOUR TAG</div>
+  <div class="tag">this name carries your scores on the leaderboard</div>
+  <input id="handle-input" maxlength="15" placeholder="yourtag" autocomplete="off" autocapitalize="off" spellcheck="false" />
+  <div id="handle-note"></div>
+  <div class="menu"><button id="handle-save">SAVE TAG</button><button id="profile-close" class="ghost">CLOSE</button></div>
+  <div id="profile-stats" class="best"></div>
+</div>
+
+<div id="board" class="overlay hidden">
+  <div class="logo" style="font-size:clamp(34px,10vw,64px)">LEADERBOARD</div>
+  <div class="lbtabs"><button id="tab-daily" class="lbtab on">DAILY</button><button id="tab-all" class="lbtab">ALL-TIME</button></div>
+  <div id="lblist">loading&hellip;</div>
+  <div id="lbme"></div>
+  <button id="board-close" class="ghost" style="margin-top:18px">CLOSE</button>
 </div>
 
 <button id="mute">&#128266;</button>
@@ -299,11 +337,11 @@ function curMult(){ return comboMult(S.combo)*tierMult(S.tier); }
 function accent(){ return CFG.themes[S.tier%CFG.themes.length]; }
 function setAccent(hex){ document.documentElement.style.setProperty('--accent',hex); }
 function newGame(kind,seed){ const sd=(seed!=null)?(seed>>>0):hashSeed('endless-'+Date.now()+'-'+Math.random());
-  S={ mode:'playing', kind:kind, seed:sd, rng:mulberry32(sd), angle:0, dir:1, speed:CFG.baseSpeed, score:0, combo:0, maxCombo:0, perfects:0, tier:0, locks:0, ringTarget:CFG.ringTargetBase, zone:CFG.zoneBase, target:0, lockAngles:[], shields:1, celebT:0, mood:'idle', moodT:0,
+  S={ mode:'playing', kind:kind, seed:sd, rng:mulberry32(sd), angle:0, dir:1, speed:CFG.baseSpeed, score:0, combo:0, maxCombo:0, perfects:0, tier:0, locks:0, ringTarget:CFG.ringTargetBase, zone:CFG.zoneBase, target:0, lockAngles:[], shields:1, celebT:0, gt:0, log:[], mood:'idle', moodT:0,
     challengeTarget:(kind==='challenge'&&pendingChallenge)?pendingChallenge.t:null, challengerName:(kind==='challenge'&&pendingChallenge)?pendingChallenge.n:null };
   placeTarget(); setAccent(CFG.themes[0]); shake=0; flashA=0; parts.length=0; }
 function placeTarget(){ const off=CFG.minTravel+S.rng()*(Math.PI*2-CFG.minTravel*2); S.target=wrap(S.angle+S.dir*off); }
-function handleTap(){ if(!S||S.mode!=='playing') return; const d=angDist(S.angle,S.target); if(d<=S.zone/2) success(d<=(S.zone*CFG.perfectFrac)/2); else miss(); }
+function handleTap(){ if(!S||S.mode!=='playing') return; S.log.push(Math.round(S.gt*100000)/100000); const d=angDist(S.angle,S.target); if(d<=S.zone/2) success(d<=(S.zone*CFG.perfectFrac)/2); else miss(); }
 function miss(){ if(S.shields>0) saveClutch(); else die(); }
 function saveClutch(){ S.shields--; S.combo=0; timeScale=0.18; const x=cx+Math.cos(S.angle)*R,y=cy+Math.sin(S.angle)*R; spawnBurst(x,y,'#fff',24,1.4); spawnBurst(x,y,'#00e5ff',20,1.2); shake=14; flashColor='#bff7ff'; flashA=0.45; blip(520,0.12,'sine',0.18); setTimeout(()=>blip(780,0.12,'sine',0.16),90); buzz([15,30]); showBig('CLUTCH!','#bff7ff'); S.mood='happy'; S.moodT=0.4; placeTarget(); syncHUD(); }
 function showBig(txt,color){ bigText=txt; bigColor=color||'#fff'; bigT=1; }
@@ -327,14 +365,14 @@ function die(){
   lastStats={ score:S.score, maxCombo:S.maxCombo, perfects:S.perfects, tier:S.tier+1, kind:S.kind, day:dayNumber(), beat:beat, target:S.challengeTarget, name:S.challengerName, seed:S.seed };
   drawShareCard(lastStats,accent());
   const summary=applyRun({ score:S.score, perfects:S.perfects, tier:S.tier+1, maxCombo:S.maxCombo, kind:S.kind, newBest:allBest });
-  populateXp(summary);
+  populateXp(summary); submitScore();
   let txt='',col='#fff';
   if(S.kind==='challenge'&&beat!=null){ if(beat){ txt='YOU BEAT '+(S.challengerName||'THEM').toUpperCase()+'!'; col='#7CFF3D'; } else { txt='SO CLOSE — '+(S.challengeTarget-S.score)+' SHORT'; col='#ff6a4d'; } }
   else if(allBest){ txt='NEW BEST!'; col='#ffd23d'; }
   const rEl=document.getElementById('result'); rEl.textContent=txt; rEl.style.color=col;
   setTimeout(showDead,520);
 }
-function updateGame(dt){ if(!S||S.mode!=='playing') return; S.angle=wrap(S.angle+S.dir*S.speed*dt*timeScale); if(S.moodT>0){ S.moodT-=dt; if(S.moodT<=0) S.mood='idle'; } }
+function updateGame(dt){ if(!S||S.mode!=='playing') return; const eff=dt*timeScale; S.angle=wrap(S.angle+S.dir*S.speed*eff); S.gt+=eff; if(S.moodT>0){ S.moodT-=dt; if(S.moodT<=0) S.mood='idle'; } }
 function drawRing(){ const lw=R*0.17; ctx.lineWidth=lw; ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
   for(const a of S.lockAngles){ ctx.fillStyle=accent(); ctx.globalAlpha=0.85; ctx.beginPath(); ctx.arc(cx+Math.cos(a)*R,cy+Math.sin(a)*R,R*0.035,0,Math.PI*2); ctx.fill(); } ctx.globalAlpha=1;
   const z=S.zone; ctx.lineCap='round'; ctx.lineWidth=lw; ctx.strokeStyle=accent(); ctx.shadowBlur=24; ctx.shadowColor=accent(); ctx.beginPath(); ctx.arc(cx,cy,R,S.target-z/2,S.target+z/2); ctx.stroke();
@@ -359,7 +397,7 @@ function populateXp(sm){ el('xplevel').textContent='LV '+sm.li.level; el('xpgain
 
 function beginRun(kind,seed){ actx(); mode='playing'; el('title').classList.add('hidden'); el('intro').classList.add('hidden'); el('dead').classList.add('hidden'); el('locker').classList.add('hidden'); el('hud').classList.remove('hidden');
   newGame(kind,seed); musicStart(); musicSet(0,0,true); musicGame(); el('hint').style.opacity='0.7'; setTimeout(()=>{ if(mode==='playing') hideHint(); },3000); syncHUD(); startGuard=performance.now(); }
-function startDaily(){ pendingChallenge=null; beginRun('daily',hashSeed(dailyKey())); }
+function startDaily(){ pendingChallenge=null; beginRun('daily',hashSeed('PULSE-daily-'+dayNumber())); }
 function startEndless(){ pendingChallenge=null; beginRun('endless',null); }
 function startChallenge(){ if(!pendingChallenge) return startEndless(); beginRun('challenge',pendingChallenge.s>>>0); }
 function hideHint(){ el('hint').style.opacity='0'; }
@@ -386,7 +424,7 @@ function toast(msg){ const t=el('toast'); t.textContent=msg; t.classList.remove(
 function onChallenge(){ if(!playerName){ let n=''; try{ n=(window.prompt('Your name / handle for the challenge:')||'').trim(); }catch(e){} if(n){ playerName=n; saveName(n); } } const url=makeLink(); const text=lastStats.kind==='daily'?('Beat my PULSE Daily #'+lastStats.day+': '+lastStats.score):('Beat my PULSE score: '+lastStats.score); if(navigator.share){ navigator.share({title:'PULSE',text:text,url:url}).catch(()=>{ copy(url); toast('Challenge link copied!'); }); } else { copy(url); toast('Challenge link copied!'); } }
 
 /* --- input --- */
-function tapStart(e){ musicUnlock(); if(e&&e.target&&e.target.closest&&(e.target.closest('#title')||e.target.closest('#intro')||e.target.closest('#dead')||e.target.closest('#locker')||e.target.closest('#mute'))) return; if(mode==='playing'&&performance.now()-startGuard>120) handleTap(); }
+function tapStart(e){ musicUnlock(); if(e&&e.target&&e.target.closest&&(e.target.closest('#title')||e.target.closest('#intro')||e.target.closest('#dead')||e.target.closest('#locker')||e.target.closest('#profile')||e.target.closest('#board')||e.target.closest('#mute'))) return; if(mode==='playing'&&performance.now()-startGuard>120) handleTap(); }
 window.addEventListener('pointerdown',tapStart);
 window.addEventListener('keydown',e=>{ if(e.code==='Space'){ e.preventDefault(); musicUnlock(); if(mode==='title') startDaily(); else if(mode==='intro') startChallenge(); else if(mode==='playing'&&performance.now()-startGuard>120) handleTap(); else if(mode==='dead') beginRun(S?S.kind:'endless',(S&&S.kind!=='endless')?S.seed:null); } });
 el('daily').addEventListener('click',e=>{ e.stopPropagation(); startDaily(); });
@@ -410,7 +448,7 @@ function frame(now){ let dt=(now-last)/1000; if(dt>0.05) dt=0.05; last=now; bgPh
   const acc=(S?accent():CFG.themes[0]); const body=skinColor();
   const rg=ctx.createRadialGradient(cx,cy,R*0.2,cx,cy,Math.max(W,H)*0.75); rg.addColorStop(0,hexA((mode==='title'||mode==='intro'||mode==='locker')?body:acc,0.10+pulse*0.10)); rg.addColorStop(1,'rgba(0,0,0,0)'); ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
   if(shake>0){ ctx.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake); }
-  if(mode==='title'||mode==='intro'||mode==='locker'){ drawMascot(cx,cy-H*0.02+Math.sin(bgPhase*1.6)*8,R*0.34*(1+0.05*Math.sin(bgPhase*2.0)),'idle',body,Math.sin(bgPhase*0.8)*0.5,body); }
+  if(mode==='title'||mode==='intro'||mode==='locker'||mode==='profile'||mode==='board'){ drawMascot(cx,cy-H*0.02+Math.sin(bgPhase*1.6)*8,R*0.34*(1+0.05*Math.sin(bgPhase*2.0)),'idle',body,Math.sin(bgPhase*0.8)*0.5,body); }
   else if(S){ drawRing(); const mx=cx+Math.cos(S.angle)*R,my=cy+Math.sin(S.angle)*R; const look=Math.atan2(Math.sin(S.target)-Math.sin(S.angle),Math.cos(S.target)-Math.cos(S.angle)); if(S.celebT>0){ const cp=1-S.celebT/0.8; for(let k=0;k<3;k++){ ctx.strokeStyle=hexA('#ffffff',S.celebT*0.4*(1-k*0.3)); ctx.lineWidth=3; ctx.beginPath(); ctx.arc(mx,my,R*0.085*1.6+cp*R*0.5+k*12,0,Math.PI*2); ctx.stroke(); } } for(let i=0;i<S.shields;i++){ ctx.strokeStyle=hexA('#bff7ff',0.5-i*0.12); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(mx,my,R*0.085*1.6+i*5,0,Math.PI*2); ctx.stroke(); } drawMascot(mx,my,R*0.085,S.mood,acc,look,body); }
   drawParts();
   if(flashA>0){ ctx.fillStyle=hexA(flashColor,flashA); ctx.fillRect(-40,-40,W+80,H+80); }
@@ -418,6 +456,44 @@ function frame(now){ let dt=(now-last)/1000; if(dt>0.05) dt=0.05; last=now; bgPh
   requestAnimationFrame(frame);
 }
 function hexA(hex,a){ if(hex[0]!=='#') return 'rgba(255,255,255,'+a+')'; const n=parseInt(hex.slice(1),16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
+
+/* --- profile + leaderboard (server-authoritative scoring) --- */
+const API='https://pulse-api.clutchpbcfo.workers.dev';
+function cleanHandle(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9_\-]/g,'').slice(0,15); }
+let boardReturn='title', lastSubmit=null, lbTab='daily';
+function openProfile(){ boardReturn=(mode==='dead')?'dead':'title'; mode='profile'; el('handle-input').value=playerName||''; el('handle-note').textContent=''; const li=levelInfo(profile.xp); el('profile-stats').innerHTML='LV '+li.level+' &middot; BEST '+best+(profile.streak>0?(' &middot; \u{1F525} '+profile.streak):''); el('title').classList.add('hidden'); el('dead').classList.add('hidden'); el('profile').classList.remove('hidden'); setTimeout(()=>{ try{ el('handle-input').focus(); }catch(e){} },60); }
+function closeProfile(){ el('profile').classList.add('hidden'); if(boardReturn==='dead'){ mode='dead'; el('dead').classList.remove('hidden'); } else { mode='title'; el('title').classList.remove('hidden'); } refreshTitleProfile(); }
+function saveHandle(){ const h=cleanHandle(el('handle-input').value); if(h.length<3){ el('handle-note').textContent='3-15 letters/numbers, no spaces'; return; } playerName=h; saveName(h); el('handle-note').textContent='saved as @'+h; refreshTitleProfile(); setTimeout(closeProfile,450); }
+function openBoard(){ boardReturn=(mode==='dead')?'dead':'title'; mode='board'; el('title').classList.add('hidden'); el('dead').classList.add('hidden'); el('board').classList.remove('hidden'); loadBoard(); }
+function closeBoard(){ el('board').classList.add('hidden'); if(boardReturn==='dead'){ mode='dead'; el('dead').classList.remove('hidden'); } else { mode='title'; el('title').classList.remove('hidden'); } }
+function setTab(t){ lbTab=t; el('tab-daily').classList.toggle('on',t==='daily'); el('tab-all').classList.toggle('on',t==='all'); loadBoard(); }
+async function loadBoard(){ const list=el('lblist'); list.innerHTML='loading&hellip;'; el('lbme').textContent=''; const board=lbTab==='daily'?'daily':'alltime'; const day=dayNumber(); const h=cleanHandle(playerName);
+  const url=API+'/top?board='+board+(board==='daily'?('&day='+day):'')+(h?('&handle='+encodeURIComponent(h)):'');
+  try{ const r=await fetch(url); const d=await r.json(); const rows=d.top||[];
+    if(!rows.length){ list.innerHTML='<div class="lbrow"><span class="nm">No scores yet — be the first.</span></div>'; }
+    else { list.innerHTML=rows.map((x,i)=>'<div class="lbrow'+(h&&x.handle===h?' me':'')+'"><span class="rk">'+(i+1)+'</span><span class="nm">@'+x.handle+'</span><span class="sc">'+x.score+'</span></div>').join(''); }
+    if(h){ el('lbme').textContent=(d.rank&&d.best!=null)?('You: @'+h+'  •  #'+d.rank+'  •  '+d.best):('You: @'+h+' — no score here yet'); }
+    else { el('lbme').textContent='Set a tag in PROFILE to appear here.'; }
+  }catch(e){ list.innerHTML='<div class="lbrow"><span class="nm">Leaderboard unavailable (offline?)</span></div>'; }
+}
+async function submitScore(){ el('rank').textContent=''; if(!S||S.kind==='challenge') return; const h=cleanHandle(playerName);
+  if(!h){ el('rank').textContent='Set a tag to post this score — tap PROFILE'; return; }
+  if(!S.log||!S.log.length) return; const board=S.kind==='daily'?'daily':'alltime';
+  el('rank').textContent='posting score…';
+  try{ const r=await fetch(API+'/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({handle:h,board:board,day:dayNumber(),seed:S.seed,taps:S.log})}); const d=await r.json();
+    if(d&&d.ok){ lastSubmit=d; el('rank').innerHTML='LEADERBOARD &middot; <b>#'+d.rank+'</b> &middot; '+(board==='daily'?('Daily #'+dayNumber()):'All-Time')+' &middot; '+d.score; }
+    else { el('rank').textContent='not posted ('+((d&&d.error)||'error')+')'; }
+  }catch(e){ el('rank').textContent='not posted (offline)'; }
+}
+el('profile-btn').addEventListener('click',e=>{ e.stopPropagation(); openProfile(); });
+el('profile-close').addEventListener('click',e=>{ e.stopPropagation(); closeProfile(); });
+el('handle-save').addEventListener('click',e=>{ e.stopPropagation(); saveHandle(); });
+el('handle-input').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); saveHandle(); } });
+el('board-btn').addEventListener('click',e=>{ e.stopPropagation(); openBoard(); });
+el('board-btn2').addEventListener('click',e=>{ e.stopPropagation(); openBoard(); });
+el('board-close').addEventListener('click',e=>{ e.stopPropagation(); closeBoard(); });
+el('tab-daily').addEventListener('click',e=>{ e.stopPropagation(); setTab('daily'); });
+el('tab-all').addEventListener('click',e=>{ e.stopPropagation(); setTab('all'); });
 
 /* --- boot --- */
 resize(); M.muted=loadMuted(); updateMuteBtn();
