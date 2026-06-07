@@ -405,7 +405,7 @@ function setAccent(hex){ document.documentElement.style.setProperty('--accent',h
 function newGame(kind,seed){ const sd=(seed!=null)?(seed>>>0):hashSeed('endless-'+Date.now()+'-'+Math.random());
   S={ mode:'playing', kind:kind, seed:sd, rng:mulberry32(sd), angle:0, dir:1, speed:CFG.baseSpeed, score:0, combo:0, maxCombo:0, perfects:0, tier:0, locks:0, ringTarget:CFG.ringTargetBase, zone:CFG.zoneBase, target:0, lockAngles:[], shields:1, celebT:0, gt:0, log:[], mood:'idle', moodT:0,
     challengeTarget:(kind==='challenge'&&pendingChallenge)?pendingChallenge.t:null, challengerName:(kind==='challenge'&&pendingChallenge)?pendingChallenge.n:null };
-  placeTarget(); setAccent(CFG.themes[0]); shake=0; flashA=0; parts.length=0; }
+  placeTarget(); setAccent(CFG.themes[0]); shake=0; flashA=0; parts.length=0; if(kind!=='challenge') armStartToken(kind==='daily'?'daily':'alltime'); }
 function beatRate(t){ return Math.min(CFG.bpmCap, CFG.bpmBase + t*CFG.bpmPerTier); }
 function placeTarget(){ const spb=60/beatRate(S.tier); const bd=S.speed*spb; const kmin=Math.max(1,Math.ceil(CFG.minTravel/bd)); const kcap=Math.max(kmin,Math.floor(6.0/bd)); let k=kmin+Math.floor(S.rng()*3); if(k>kcap) k=kcap; S.target=wrap(S.angle+S.dir*(k*bd)); }
 function handleTap(){ if(!S||S.mode!=='playing') return; S.log.push(Math.round(S.gt*100000)/100000); const d=angDist(S.angle,S.target); if(d<=S.zone/2) success(d<=(S.zone*CFG.perfectFrac)/2); else miss(); }
@@ -527,7 +527,9 @@ function frame(now){ let dt=(now-last)/1000; if(dt>0.05) dt=0.05; last=now; bgPh
 function hexA(hex,a){ if(hex[0]!=='#') return 'rgba(255,255,255,'+a+')'; const n=parseInt(hex.slice(1),16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
 
 /* --- profile + leaderboard (server-authoritative scoring) --- */
-const API='https://pulse-api.clutchpbcfo.workers.dev';
+const API='https://www.stakit.app/api/pulse';
+let startTok=null,startTokP=null;
+function armStartToken(mode){ startTok=null; startTokP=fetch(API+'?op=start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:mode})}).then(r=>r.json()).then(t=>{startTok=t;return t;}).catch(()=>null); }
 function cleanHandle(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9_\-]/g,'').slice(0,15); }
 let boardReturn='title', lastSubmit=null, lbTab='daily';
 function openProfile(){ boardReturn=(mode==='dead')?'dead':'title'; mode='profile'; el('handle-input').value=playerName||''; el('handle-note').textContent=''; const li=levelInfo(profile.xp); el('profile-stats').innerHTML='LV '+li.level+' &middot; BEST '+best+(profile.streak>0?(' &middot; \u{1F525} '+profile.streak):''); el('title').classList.add('hidden'); el('dead').classList.add('hidden'); el('profile').classList.remove('hidden'); setTimeout(()=>{ try{ el('handle-input').focus(); }catch(e){} },60); }
@@ -537,7 +539,7 @@ function openBoard(){ boardReturn=(mode==='dead')?'dead':'title'; mode='board'; 
 function closeBoard(){ el('board').classList.add('hidden'); if(boardReturn==='dead'){ mode='dead'; el('dead').classList.remove('hidden'); } else { mode='title'; el('title').classList.remove('hidden'); } }
 function setTab(t){ lbTab=t; el('tab-daily').classList.toggle('on',t==='daily'); el('tab-all').classList.toggle('on',t==='all'); loadBoard(); }
 async function loadBoard(){ const list=el('lblist'); list.innerHTML='loading&hellip;'; el('lbme').textContent=''; const board=lbTab==='daily'?'daily':'alltime'; const day=dayNumber(); const h=cleanHandle(playerName);
-  const url=API+'/top?board='+board+(board==='daily'?('&day='+day):'')+(h?('&handle='+encodeURIComponent(h)):'');
+  const url=API+'?op=top&board='+board+(board==='daily'?('&day='+day):'')+(h?('&handle='+encodeURIComponent(h)):'');
   try{ const r=await fetch(url); const d=await r.json(); const rows=d.top||[];
     if(!rows.length){ list.innerHTML='<div class="lbrow"><span class="nm">No scores yet — be the first.</span></div>'; }
     else { list.innerHTML=rows.map((x,i)=>'<div class="lbrow'+(h&&x.handle===h?' me':'')+'"><span class="rk">'+(i+1)+'</span><span class="nm">@'+x.handle+'</span><span class="sc">'+x.score+'</span></div>').join(''); }
@@ -549,7 +551,8 @@ async function submitScore(){ el('rank').textContent=''; if(!S||S.kind==='challe
   if(!h){ el('rank').textContent='Set a tag to post this score — tap PROFILE'; return; }
   if(!S.log||!S.log.length) return; const board=S.kind==='daily'?'daily':'alltime';
   el('rank').textContent='posting score…';
-  try{ const r=await fetch(API+'/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({handle:h,board:board,day:dayNumber(),seed:S.seed,taps:S.log})}); const d=await r.json();
+  try{ const tok=startTok||(startTokP?await startTokP:null);
+    const r=await fetch(API+'?op=submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({handle:h,board:board,day:dayNumber(),seed:S.seed,taps:S.log,gameId:tok&&tok.gameId,issuedAt:tok&&tok.issuedAt,sig:tok&&tok.sig})}); const d=await r.json();
     if(d&&d.ok){ lastSubmit=d; el('rank').innerHTML='LEADERBOARD &middot; <b>#'+d.rank+'</b> &middot; '+(board==='daily'?('Daily #'+dayNumber()):'All-Time')+' &middot; '+d.score; }
     else { el('rank').textContent='not posted ('+((d&&d.error)||'error')+')'; }
   }catch(e){ el('rank').textContent='not posted (offline)'; }
