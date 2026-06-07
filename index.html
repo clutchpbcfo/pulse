@@ -3,11 +3,22 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<meta name="theme-color" content="#05060a" />
-<title>PULSE</title>
+<meta name="theme-color" content="#08080F" />
+<title>PULSE — Tap on the beat | INSERT COIN</title>
+<meta name="description" content="PULSE — a one-tap rhythm reflex game. Nail the beat for PERFECT, chain combos, climb the global ranks. Part of the INSERT COIN arcade." />
 <link rel="icon" type="image/svg+xml" href="pulse-icon.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="manifest" href="manifest.json" />
+<meta property="og:title" content="PULSE — Tap on the beat" />
+<meta property="og:description" content="One-tap rhythm reflex. Nail the beat, chain combos, climb the ranks. An INSERT COIN game." />
+<meta property="og:image" content="og.png" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="og.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
 <style>
   :root{ --accent:#00e5ff; }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -86,6 +97,36 @@
   #lbme{ margin-top:10px; font-size:13px; font-weight:800; opacity:.85; min-height:1em; }
   #rank{ font-size:14px; font-weight:800; min-height:1em; letter-spacing:.5px; }
   .credit{ position:fixed; bottom:2.2vh; left:0; right:0; text-align:center; font-size:11px; letter-spacing:1px; opacity:.3; z-index:6; }
+
+  /* ===== INSERT COIN brand revamp ===== */
+  :root{ --accent:#00e5ff; --accent2:#ff5fa2; }
+  html,body{ background:#08080F; font-family:'Chakra Petch','SF Pro Display',system-ui,sans-serif; }
+  #score,#best2,#tier,#tbest,#tlevel,#rank,.lbrow .sc,.lbrow .rk,.best{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+  #title{ justify-content:flex-start; padding:4.2vh 6vw 7vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    background:radial-gradient(135% 100% at 50% 18%, #15132b 0%, #0c0a18 48%, #08080F 100%); }
+  #title>*{ position:relative; z-index:2; }
+  .ic-tag{ display:flex; align-items:center; gap:9px; font-weight:600; font-size:13px; letter-spacing:3px; color:#8C8CB0; text-transform:uppercase; }
+  .ic-tag img{ width:24px; height:24px; border-radius:6px; }
+  .ic-tag .free{ background:#6FE3FF; color:#08121a; padding:3px 11px; border-radius:8px; font-weight:700; letter-spacing:1.5px; }
+  .pulse-hero{ position:relative; display:flex; align-items:center; justify-content:center; width:clamp(150px,42vw,210px); height:clamp(150px,42vw,210px); margin:1.4vh 0 -1vh; }
+  .pulse-hero .pulse-orb{ width:74%; z-index:1; filter:drop-shadow(0 16px 38px rgba(0,0,0,.55)); animation:pbob 4s ease-in-out infinite; }
+  .pulse-hero .ring{ position:absolute; left:50%; top:50%; width:60%; height:60%; transform:translate(-50%,-50%); border-radius:50%; border:2px solid rgba(0,229,255,.5); animation:pring 2.8s ease-out infinite; }
+  .pulse-hero .ring:nth-child(2){ border-color:rgba(255,95,162,.45); animation-delay:.95s; }
+  .pulse-hero .ring:nth-child(3){ border-color:rgba(0,229,255,.35); animation-delay:1.9s; }
+  @keyframes pring{ 0%{ width:42%;height:42%;opacity:0 } 18%{ opacity:.85 } 100%{ width:118%;height:118%;opacity:0 } }
+  @keyframes pbob{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-9px) } }
+  #title .logo{ font-family:'Chakra Petch',system-ui,sans-serif; font-weight:700; letter-spacing:-1px; font-size:clamp(54px,17vw,108px); line-height:.92;
+    background:linear-gradient(100deg,#6FE3FF 0%,#00e5ff 32%,#ff5fa2 92%); -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 0 30px rgba(0,229,255,.35)) drop-shadow(0 0 54px rgba(255,95,162,.22)); margin-top:.6vh; }
+  #title .tag{ font-family:'Chakra Petch',sans-serif; color:#b9b6d4; }
+  .menu{ margin-top:18px; gap:11px; }
+  button{ font-family:'Chakra Petch',system-ui,sans-serif; letter-spacing:1.5px; }
+  #title .menu button:not(.ghost), #daily{ background:linear-gradient(100deg,#00e5ff,#ff5fa2); color:#070710;
+    box-shadow:0 10px 30px rgba(0,229,255,.32), 0 6px 22px rgba(255,95,162,.22); }
+  button.ghost{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.14); color:#eceaf6; box-shadow:none; }
+  button.ghost:active{ border-color:rgba(0,229,255,.55); box-shadow:0 0 18px rgba(0,229,255,.16); }
+  .best{ opacity:.7; letter-spacing:2px; }
+  .credit{ font-family:'Chakra Petch',sans-serif; }
 </style>
 </head>
 <body>
@@ -116,6 +157,8 @@ setTimeout(end,11000);})();
 </div>
 
 <div id="title" class="overlay">
+  <div class="ic-tag"><img src="favicon-32.png" alt="">INSERT COIN<span class="free">FREE</span></div>
+  <div class="pulse-hero"><span class="ring"></span><span class="ring"></span><span class="ring"></span><img class="pulse-orb" src="pulse-mascot.png" alt="PULSE orb"></div>
   <div class="logo">PULSE</div>
   <div class="tag">tap the instant the orb hits the zone &middot; nail the white band for 2&times;</div>
   <div id="profrow"><span id="tlevel">LV 1</span><div class="xpbar"><i id="txpfill"></i></div><span id="tstreak"></span></div>
