@@ -164,7 +164,7 @@ if(sk)sk.addEventListener('click',reveal);
 </div>
 
 <div id="title" class="overlay">
-  <div class="ic-tag"><img src="favicon-32.png" alt="">INSERT COIN<span class="free">FREE</span></div>
+  <a class="ic-tag" href="https://clutchpbcfo.github.io/arcade-shell/" style="text-decoration:none" title="back to the arcade"><img src="favicon-32.png" alt="">INSERT COIN<span class="free">FREE</span></a>
   <div class="pulse-hero"><span class="ring"></span><span class="ring"></span><span class="ring"></span><img class="pulse-orb" src="pulse-mascot.png" alt="PULSE orb"></div>
   <div class="logo">PULSE</div>
   <div class="tag">tap the instant the orb hits the zone &middot; nail the white band for 2&times;</div>
@@ -209,7 +209,7 @@ if(sk)sk.addEventListener('click',reveal);
     <div class="btns">
       <button id="save" class="ghost">SAVE CARD</button>
       <button id="board-btn2" class="ghost">RANKINGS</button>
-      <button id="menu" class="ghost">MENU</button>
+      <button id="menu" class="ghost">MENU</button></div><div class="btns"><button id="toArcade" class="ghost">⌂ BACK TO ARCADE</button>
     </div>
   </div>
 </div>
@@ -233,7 +233,7 @@ if(sk)sk.addEventListener('click',reveal);
 
 <button id="mute">&#128266;</button>
 <div id="toast" class="hidden">Link copied!</div>
-<div class="credit">PULSE &middot; working title &middot; @ClutchPBCFO</div>
+<div class="credit">PULSE &middot; @ClutchPBCFO</div>
 
 <script>
 /* =====================================================================
@@ -502,6 +502,7 @@ el('introplay').addEventListener('click',e=>{ e.stopPropagation(); startChalleng
 el('introskip').addEventListener('click',e=>{ e.stopPropagation(); startEndless(); });
 el('replay').addEventListener('click',e=>{ e.stopPropagation(); beginRun(S.kind, S.kind==='endless'?null:S.seed); });
 el('menu').addEventListener('click',e=>{ e.stopPropagation(); gotoTitle(); });
+el('toArcade').addEventListener('click',e=>{ e.stopPropagation(); location.href='https://clutchpbcfo.github.io/arcade-shell/'; });
 el('challenge').addEventListener('click',e=>{ e.stopPropagation(); onChallenge(); });
 el('save').addEventListener('click',e=>{ e.stopPropagation(); try{ const a=document.createElement('a'); a.download='pulse-'+(lastStats?lastStats.kind:'score')+'.png'; a.href=el('card').toDataURL('image/png'); a.click(); }catch(err){} });
 el('mute').addEventListener('click',e=>{ e.stopPropagation(); toggleMute(); });
