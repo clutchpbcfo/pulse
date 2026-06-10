@@ -142,8 +142,8 @@
 <script>
 (function(){var o=document.getElementById('pulseintro-splash');if(!o)return;
 function hideBoot(){}
-function reveal(){if(!o)return;var x=o;o=null;x.style.transition='opacity .55s ease';x.style.opacity='0';setTimeout(function(){if(x&&x.parentNode)x.parentNode.removeChild(x);},600);try{sessionStorage.setItem('pulseintroSeen','1');}catch(e){}hideBoot();}
-try{if(sessionStorage.getItem('pulseintroSeen')){if(o.parentNode)o.parentNode.removeChild(o);hideBoot();return;}}catch(e){}
+function reveal(){if(!o)return;var x=o;o=null;x.style.transition='opacity .55s ease';x.style.opacity='0';setTimeout(function(){if(x&&x.parentNode)x.parentNode.removeChild(x);},600);try{localStorage.setItem('pulseintroSeen','1');}catch(e){}hideBoot();}
+try{if(localStorage.getItem('pulseintroSeen')||sessionStorage.getItem('pulseintroSeen')){if(o.parentNode)o.parentNode.removeChild(o);hideBoot();return;}}catch(e){}
 var v=document.getElementById('pulseintro-vid'),gate=document.getElementById('pulseintro-gate'),sk=document.getElementById('pulseintro-skip'),st=document.getElementById('pulseintro-start');
 if(v){v.addEventListener('ended',reveal);v.addEventListener('error',reveal);}
 function start(){if(gate)gate.style.display='none';if(v){v.muted=false;v.volume=1;try{v.currentTime=0;}catch(e){}var p=v.play&&v.play();if(p&&p.catch)p.catch(function(){v.muted=true;v.play&&v.play();});}}
@@ -177,6 +177,7 @@ if(sk)sk.addEventListener('click',reveal);
     <button id="profile-btn" class="ghost">PROFILE</button>
   </div>
   <div class="best">BEST&nbsp; <span id="tbest">0</span></div>
+  <div class="best" id="tchase" style="font-size:11px;opacity:.75;margin-top:4px"></div>
 </div>
 
 <div id="intro" class="overlay hidden">
@@ -436,6 +437,7 @@ function die(){
   let txt='',col='#fff';
   if(S.kind==='challenge'&&beat!=null){ if(beat){ txt='YOU BEAT '+(S.challengerName||'THEM').toUpperCase()+'!'; col='#7CFF3D'; } else { txt='SO CLOSE — '+(S.challengeTarget-S.score)+' SHORT'; col='#ff6a4d'; } }
   else if(allBest){ txt='NEW BEST!'; col='#ffd23d'; }
+  else if(best>0&&S.score>0&&S.score>=best*0.8){ txt=(best-S.score)+' OFF YOUR BEST'; col='#ff6a4d'; }
   const rEl=document.getElementById('result'); rEl.textContent=txt; rEl.style.color=col;
   setTimeout(showDead,520);
 }
@@ -457,7 +459,18 @@ function saveDailyBest(s){ if(s>dailyBest()){ try{ localStorage.setItem(dailyKey
 function loadName(){ try{ return localStorage.getItem('pulse_name')||''; }catch(e){ return ''; } }
 function saveName(n){ try{ localStorage.setItem('pulse_name',n); }catch(e){} }
 
-function refreshTitleProfile(){ const li=levelInfo(profile.xp); el('tlevel').textContent='LV '+li.level; el('txpfill').style.width=Math.round(li.into/li.need*100)+'%'; const ts=el('tstreak'); if(profile.streak>0){ ts.textContent='🔥 '+profile.streak; ts.style.display='inline'; } else ts.style.display='none'; }
+let _chaseLoaded=false;
+async function loadTitleChase(){ if(_chaseLoaded) return; _chaseLoaded=true;
+  try{ const h=cleanHandle(playerName);
+    const r=await fetch(API+'?op=top&board=alltime'+(h?('&handle='+encodeURIComponent(h)):'')); const d=await r.json();
+    const t=(d.top&&d.top[0])||null; const e=el('tchase'); if(!t||!e) return;
+    if(h&&d.best!=null&&d.rank>1){ e.innerHTML='ALL-TIME: @'+t.handle+' '+t.score+' &middot; you #'+d.rank+' — <span style="color:#ff6a4d">'+(t.score-d.best)+' behind</span>'; }
+    else if(h&&d.rank===1){ e.innerHTML='<span style="color:#ffd23d">YOU HOLD #1 ALL-TIME</span> &middot; '+d.best; }
+    else { e.innerHTML='ALL-TIME: @'+t.handle+' &middot; '+t.score+' — beat it.'; }
+  }catch(err){} }
+function refreshTitleProfile(){ loadTitleChase(); const li=levelInfo(profile.xp); el('tlevel').textContent='LV '+li.level; el('txpfill').style.width=Math.round(li.into/li.need*100)+'%'; const ts=el('tstreak'); const _today=dayNumber();
+  if(profile.streak>0){ ts.textContent='🔥 '+profile.streak+(profile.lastDailyDay===_today?'':' · daily open'); ts.style.display='inline'; }
+  else { ts.textContent='daily = streak'; ts.style.display='inline'; ts.style.opacity='.55'; } }
 function pill(txt,good){ const d=document.createElement('div'); d.className='pill'+(good?' good':''); d.textContent=txt; return d; }
 function populateXp(sm){ el('xplevel').textContent='LV '+sm.li.level; el('xpgain').textContent='+'+sm.xpGain+' XP'; lastXpPct=Math.round(sm.li.into/sm.li.need*100); el('xpfill').style.width='0%';
   const r=el('rewards'); r.innerHTML=''; if(sm.isDaily) r.appendChild(pill('🔥 '+sm.streak+'-day streak', false)); if(sm.leveled) r.appendChild(pill('LEVEL UP → LV '+sm.level,true)); sm.newUnlocks.forEach(s=>r.appendChild(pill('UNLOCKED: '+s.name,true))); sm.newMiles.forEach(m=>r.appendChild(pill(m.name+' ✓ +'+m.xp,true))); }
@@ -541,7 +554,11 @@ function setTab(t){ lbTab=t; el('tab-daily').classList.toggle('on',t==='daily');
 async function loadBoard(){ const list=el('lblist'); list.innerHTML='loading&hellip;'; el('lbme').textContent=''; const board=lbTab==='daily'?'daily':'alltime'; const day=dayNumber(); const h=cleanHandle(playerName);
   const url=API+'?op=top&board='+board+(board==='daily'?('&day='+day):'')+(h?('&handle='+encodeURIComponent(h)):'');
   try{ const r=await fetch(url); const d=await r.json(); const rows=d.top||[];
-    if(!rows.length){ list.innerHTML='<div class="lbrow"><span class="nm">No scores yet — be the first.</span></div>'; }
+    if(!rows.length){
+      list.innerHTML='<div class="lbrow"><span class="nm" style="color:#ffd23d">Daily #'+dayNumber()+' is wide open — first score takes #1.</span></div>';
+      if(board==='daily'){ try{ const r2=await fetch(API+'?op=top&board=alltime'); const d2=await r2.json();
+        if(d2.top&&d2.top.length){ list.innerHTML+='<div class="lbrow"><span class="nm" style="opacity:.55">all-time to beat:</span></div>'+d2.top.slice(0,3).map((x,i)=>'<div class="lbrow" style="opacity:.55"><span class="rk">'+(i+1)+'</span><span class="nm">@'+x.handle+'</span><span class="sc">'+x.score+'</span></div>').join(''); } }catch(e){} }
+    }
     else { list.innerHTML=rows.map((x,i)=>'<div class="lbrow'+(h&&x.handle===h?' me':'')+'"><span class="rk">'+(i+1)+'</span><span class="nm">@'+x.handle+'</span><span class="sc">'+x.score+'</span></div>').join(''); }
     if(h){ el('lbme').textContent=(d.rank&&d.best!=null)?('You: @'+h+'  •  #'+d.rank+'  •  '+d.best):('You: @'+h+' — no score here yet'); }
     else { el('lbme').textContent='Set a tag in PROFILE to appear here.'; }
@@ -553,7 +570,10 @@ async function submitScore(){ el('rank').textContent=''; if(!S||S.kind==='challe
   el('rank').textContent='posting score…';
   try{ const tok=startTok||(startTokP?await startTokP:null);
     const r=await fetch(API+'?op=submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({handle:h,board:board,day:dayNumber(),seed:S.seed,taps:S.log,gameId:tok&&tok.gameId,issuedAt:tok&&tok.issuedAt,sig:tok&&tok.sig})}); const d=await r.json();
-    if(d&&d.ok){ lastSubmit=d; el('rank').innerHTML='LEADERBOARD &middot; <b>#'+d.rank+'</b> &middot; '+(board==='daily'?('Daily #'+dayNumber()):'All-Time')+' &middot; '+d.score; }
+    if(d&&d.ok){ lastSubmit=d; let chase='';
+      if(d.top&&d.rank>1){ const above=d.top[d.rank-2]; if(above&&above.score>d.score) chase=' &middot; <span style="color:#ff6a4d">'+(above.score-d.score+1)+' to pass @'+above.handle+'</span>'; }
+      else if(d.rank===1){ chase=' &middot; <span style="color:#ffd23d">YOU HOLD #1</span>'; }
+      el('rank').innerHTML='LEADERBOARD &middot; <b>#'+d.rank+'</b> &middot; '+(board==='daily'?('Daily #'+dayNumber()):'All-Time')+' &middot; '+d.score+chase; }
     else { el('rank').textContent='not posted ('+((d&&d.error)||'error')+')'; }
   }catch(e){ el('rank').textContent='not posted (offline)'; }
 }
