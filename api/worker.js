@@ -105,7 +105,10 @@ export default {
         const sim = simulate(seed, taps);
         // plausibility guards (raise the bot bar; daily is the protected board)
         if(sim.score < 0 || sim.score > 5000000) return json({ error:'implausible' }, 400);
-        if(sim.used >= 12 && sim.minGap < 0.03) return json({ error:'too_fast' }, 400);
+        // NO fast-tap rejection. The score is the authoritative replay output, so spamming fast taps
+        // just misses the ring and dies near 0 -- a real score proves real play. The old
+        // `minGap < 0.03` gate let a SINGLE fast tap (a double-tap, a frantic late-game moment) throw
+        // out an ENTIRE legit run (the STAK-class false positive that dropped Clutch's 32550). Removed.
         const ts = Date.now();
         await env.DB.prepare("INSERT INTO scores (board,handle,score,tier,perfects,ts) VALUES (?,?,?,?,?,?)").bind(key, handle, sim.score, sim.tier, sim.perfects, ts).run();
         return json({ ok:true, score:sim.score, tier:sim.tier, perfects:sim.perfects, rank: await rankFor(env, key, sim.score), top: await topFor(env, key) });
