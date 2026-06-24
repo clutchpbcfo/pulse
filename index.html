@@ -103,6 +103,8 @@
 </style>
 </head>
 <body>
+<script>/* INSERT COIN bridge (inert on web) */
+(function(){var n=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.bridge;function p(m){if(n){try{n.postMessage(m)}catch(e){}}}var sc=null;window.INSERTCOIN=window.INSERTCOIN||{};window.INSERTCOIN.setSeed=function(s){window.INSERTCOIN.dailySeed=s;if(sc){try{sc(s)}catch(e){}}};window.IC={inApp:!!n,gameId:"pulse",ready:function(){p({type:"ready"})},requestSeed:function(){p({type:"requestSeed"})},onSeed:function(cb){sc=cb;if(window.INSERTCOIN.dailySeed)cb(window.INSERTCOIN.dailySeed);else this.requestSeed()},haptic:function(s){p({type:"haptic",style:s||"tick"})},score:function(s){p({type:"score",game:this.gameId,score:Math.round(s)})},gameover:function(s){p({type:"gameover",game:this.gameId,score:Math.round(s)})}};if(n)window.IC.ready();})();</script>
 <canvas id="game"></canvas>
 
 <div id="hud" class="hidden">
@@ -417,7 +419,7 @@ function die(){
   blip(180,0.22,'sawtooth',0.22); setTimeout(()=>blip(90,0.3,'sawtooth',0.2),110); buzz(220);
   S.mood='dizzy'; const x=cx+Math.cos(S.angle)*R,y=cy+Math.sin(S.angle)*R; spawnBurst(x,y,'#ff2d4d',30,1.6);
   if(S.kind==='duel'){ duelRunEnded(); return; } /* duel: server verdict screen takes over (no card/XP/leaderboard) */
-  const allBest=saveBest(S.score); if(S.kind==='daily') saveDailyBest(S.score);
+  const allBest=saveBest(S.score); if(S.kind==='daily') saveDailyBest(S.score);try{if(window.IC)IC.gameover(S.score);}catch(e){}
   const beat=(S.kind==='challenge'&&S.challengeTarget!=null)?(S.score>S.challengeTarget):null;
   lastStats={ score:S.score, maxCombo:S.maxCombo, perfects:S.perfects, tier:S.tier+1, kind:S.kind, day:dayNumber(), beat:beat, target:S.challengeTarget, name:S.challengerName, seed:S.seed };
   drawShareCard(lastStats,accent());
